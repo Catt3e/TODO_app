@@ -1,7 +1,7 @@
 from sqlalchemy.orm import Session
 from app.models.task import Task
 from datetime import datetime
-from app.utils.validation import validate_task_data
+from app.utils.helper import validate_task_data
 
 def create_task(db: Session, task_data):
     validate_task_data(task_data)
@@ -37,7 +37,10 @@ def update_task(db: Session, task_id: int, task_data):
 
 def index_check(db: Session, project_id: int, task_index: int):
     if task_index is None:
-        task_index = get_project_tasks(db, project_id)[-1].task_index + 1 if get_project_tasks(db, project_id) else 1
-    if any(task.task_index == task_index for task in get_project_tasks(db, project_id)):
+        task_index = get_new_task_index(db, project_id)
+    elif any(task.task_index == task_index for task in get_project_tasks(db, project_id)):
         raise ValueError("Duplicate index")
     
+def get_new_task_index(db: Session, project_id: int):
+    tasks = get_project_tasks(db, project_id)
+    return max(task.task_index for task in tasks) + 1 if tasks else 1

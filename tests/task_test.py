@@ -57,3 +57,4 @@ def test_create_task_due_date_in_past(db_session):
     with pytest.raises(Exception) as exc_info:
         create_task(db_session, temp1)
     assert "Invalid due date" in str(exc_info.value)
+

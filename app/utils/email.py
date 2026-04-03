@@ -2,8 +2,8 @@ import aiosmtplib
 from email.message import EmailMessage
 from app.core.config import settings
 
-async def send_verification_email(email_to: str, token: str):
-    verification_link = f"http://localhost:8000/auth/verify-email?token={token}"  # ← change to your frontend URL later
+
+async def send_verification_email(email_to: str, code: str):
 
     msg = EmailMessage()
     msg["From"] = settings.EMAIL_USER
@@ -12,9 +12,9 @@ async def send_verification_email(email_to: str, token: str):
 
     html = f"""
     <h2>Welcome to the To-Do List app!</h2>
-    <p>Click the link below to verify your email:</p>
-    <a href="{verification_link}">Verify Email</a>
-    <p>The link expires in {settings.VERIFICATION_TOKEN_EXPIRE_MINUTES} minutes.</p>
+    <p>This is your verification code:</p>
+    <h1>{code}</h1>
+    <p>The code expires in {settings.VERIFICATION_TOKEN_EXPIRE_MINUTES} minutes.</p>
     """
     msg.add_alternative(html, subtype="html")
 

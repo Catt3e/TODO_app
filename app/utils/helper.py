@@ -7,8 +7,8 @@ def validate_task_data(task_data):
     if due_date and due_date < datetime.utcnow():
         print(due_date, datetime.utcnow())
         raise ValueError("Invalid due date")
-    if not task_data.task_name:
-        raise ValueError("Task name is required")
+    if not task_data.title:
+        raise ValueError("Task title is required")
     if task_data.status not in [-1, 0, 1]:
         raise ValueError("Invalid status value")
 

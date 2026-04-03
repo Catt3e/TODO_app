@@ -3,7 +3,7 @@ from datetime import datetime
 from typing import Optional
 
 class TaskBase(BaseModel):
-    task_name: str
+    title: str
     project_id: int
     task_index: int
     description: Optional[str] = None

@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="min-h-screen bg-gray-900 text-gray-100 p-6">
+    
+    <div class="max-w-2xl mx-auto space-y-6">
+
+        <!-- Header -->
+        <div class="flex justify-between items-center">
+            <h1 class="text-2xl font-bold">My Tasks</h1>
+            {% if user %}
+                <p>Welcome, {{ user.username }}!</p>
+                <a href="/auth/logout" class="text-sm text-gray-400 hover:text-red-400">
+                    Logout
+                </a>
+            {% else %}
+                <a href="/auth/login" class="text-sm text-gray-400 hover:text-blue-400">
+                    Login
+                </a>
+            {% endif %}
+        </div>
+
+        <!-- Add Task -->
+        <div class="bg-gray-800 p-4 rounded-xl shadow space-y-3">
+            <form method="post" class="flex gap-2">
+                <input type="text" name="task" placeholder="What do you need to do?" required
+                    class="flex-1 px-4 py-2 rounded-lg bg-gray-700 text-white placeholder-gray-400
+                    focus:outline-none focus:ring-2 focus:ring-blue-500">
+                
+                <button type="submit"
+                    class="px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg font-semibold">
+                    Add
+                </button>
+            </form>
+        </div>
+
+        <!-- Task List -->
+        <div class="bg-gray-800 p-4 rounded-xl shadow space-y-3">
+
+            {% if tasks %}
+                {% for task in tasks %}
+                <div class="flex items-center justify-between bg-gray-700 px-4 py-2 rounded-lg">
+
+                    <!-- Left: checkbox + title -->
+                    <div class="flex items-center gap-3">
+                        <input type="checkbox"
+                            {% if task.completed %}checked{% endif %}
+                            class="w-4 h-4 accent-blue-500">
+
+                        <span class="{% if task.completed %}line-through text-gray-400{% endif %}">
+                            {{ task.title }}
+                        </span>
+                    </div>
+
+                    <!-- Right: delete -->
+                    <form method="post" action="/delete/{{ task.id }}">
+                        <button type="submit"
+                            class="text-sm text-red-400 hover:text-red-500">
+                            Delete
+                        </button>
+                    </form>
+
+                </div>
+                {% endfor %}
+            {% else %}
+                <p class="text-gray-400 text-sm text-center">
+                    No tasks yet. Add something... or don’t, I’m not your boss.
+                </p>
+            {% endif %}
+
+        </div>
+
+    </div>
+
+</div>
+
+{% endblock %}

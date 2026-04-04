@@ -1,7 +1,12 @@
+from enum import auto
+
 import pytest
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from app.core.database import Base
+
+[pytest]
+asyncio_mode = auto
 
 SQLALCHEMY_DATABASE_URL = "sqlite:///:memory:"
 

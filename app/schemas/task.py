@@ -7,11 +7,14 @@ class TaskBase(BaseModel):
     project_id: int
     task_index: int
     description: Optional[str] = None
-    due_date: Optional[datetime] = None
+    due_date: datetime
     status: Optional[int] = 0 # 0: pending, 1: completed, -1: overdue
 
 class TaskCreate(TaskBase):
-    pass
+    title: str
+    project_id: int
+    description: Optional[str] = None
+    due_date: datetime
 
 class TaskUpdate(TaskBase):
     pass

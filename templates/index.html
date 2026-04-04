@@ -1,77 +1,280 @@
 {% extends "base.html" %}
 {% block content %}
-
 <div class="min-h-screen bg-gray-900 text-gray-100 p-6">
-    
-    <div class="max-w-2xl mx-auto space-y-6">
 
+    <div class="max-w-4xl mx-auto space-y-8">
+        
         <!-- Header -->
         <div class="flex justify-between items-center">
-            <h1 class="text-2xl font-bold">My Tasks</h1>
+            <div>
+                <h1 class="text-3xl font-bold tracking-tight">Personal Projects Manager</h1>
+                <p class="text-gray-400 mt-1">Stay organized. Finish what matters.</p>
+            </div>
             {% if user %}
-                <p>Welcome, {{ user.username }}!</p>
-                <a href="/auth/logout" class="text-sm text-gray-400 hover:text-red-400">
-                    Logout
-                </a>
+                <div class="flex items-center gap-4">
+                    <p class="text-sm text-gray-400">Welcome, <span class="font-medium text-white">{{ user.username }}</span></p>
+                    <a href="/auth/logout" 
+                       class="text-sm px-4 py-2 bg-gray-800 hover:bg-gray-700 rounded-xl transition-colors">
+                        Logout
+                    </a>
+                </div>
             {% else %}
-                <a href="/auth/login" class="text-sm text-gray-400 hover:text-blue-400">
+                <a href="/auth/login" 
+                   class="text-sm px-5 py-2 bg-blue-600 hover:bg-blue-700 rounded-xl font-medium transition-colors">
                     Login
                 </a>
             {% endif %}
         </div>
 
-        <!-- Add Task -->
-        <div class="bg-gray-800 p-4 rounded-xl shadow space-y-3">
-            <form method="post" class="flex gap-2">
-                <input type="text" name="task" placeholder="What do you need to do?" required
-                    class="flex-1 px-4 py-2 rounded-lg bg-gray-700 text-white placeholder-gray-400
-                    focus:outline-none focus:ring-2 focus:ring-blue-500">
-                
-                <button type="submit"
-                    class="px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg font-semibold">
-                    Add
-                </button>
-            </form>
+        <!-- New Project Button -->
+        <div class="flex justify-end">
+            <button onclick="openProjectModal()" 
+                    class="flex items-center gap-2 px-6 py-3 bg-blue-600 hover:bg-blue-700 rounded-2xl font-semibold transition-all active:scale-95">
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                </svg>
+                New Project
+            </button>
         </div>
 
-        <!-- Task List -->
-        <div class="bg-gray-800 p-4 rounded-xl shadow space-y-3">
+        <!-- Projects List -->
+        <div class="space-y-6">
+            {% if projects %}
+                {% for project in projects %}
+                <div class="bg-gray-800 rounded-3xl shadow-xl overflow-hidden border border-gray-700">
+                    
+                    <!-- Project Header -->
+                    <div onclick="toggleProject({{ project.id }})" 
+                         class="px-6 py-5 flex items-center justify-between cursor-pointer hover:bg-gray-750 transition-colors group">
+                        
+                        <div class="flex items-center gap-4">
+                            <div id="chevron-{{ project.id }}" 
+                                 class="text-gray-400 group-hover:text-gray-300 transition-transform duration-300">
+                                ▼
+                            </div>
+                            <div class="flex-1">
+                                <h2 class="text-xl font-semibold">{{ project.title }}</h2>
+                                {% if project.description %}
+                                    <p class="text-sm text-gray-400 mt-0.5 line-clamp-2">Desc: {{ project.description }}</p>
+                                {% endif %}
 
-            {% if tasks %}
-                {% for task in tasks %}
-                <div class="flex items-center justify-between bg-gray-700 px-4 py-2 rounded-lg">
+                                {% if project.get_summary() %}
+                                    <hr class="border-gray-500 p-px my-2" />
+                                    <p class="text-sm text-gray-400">{{ project.get_summary() }}</p>
+                                {% endif %}
+                            </div>
+                        </div>
 
-                    <!-- Left: checkbox + title -->
-                    <div class="flex items-center gap-3">
-                        <input type="checkbox"
-                            {% if task.completed %}checked{% endif %}
-                            class="w-4 h-4 accent-blue-500">
+                        <!-- Progress Bar -->
+                        {% if project.get_progress() is defined %}
+                        <div class="flex items-center gap-3">
+                            <div class="text-right">
+                                <div class="text-xs text-gray-400">Progress</div>
+                                <div class="font-mono text-sm font-medium text-emerald-400">
+                                    {{ project.get_progress() }}%
+                                </div>
+                            </div>
+                            <div class="w-24 h-2 bg-gray-700 rounded-full overflow-hidden">
+                                <div class="h-full bg-emerald-500 rounded-full transition-all"
+                                     style="width: {{ project.get_progress() }}%"></div>
+                            </div>
+                        </div>
+                        {% endif %}
 
-                        <span class="{% if task.completed %}line-through text-gray-400{% endif %}">
-                            {{ task.title }}
-                        </span>
+                        <!-- Edit Button (only shows on hover) -->
+                        <button onclick="event.stopImmediatePropagation(); openProjectModal({{ project.id }}, '{{ project.title|escape }}', '{{ project.description|escape|default('') }}');"
+                                class="ml-6 px-4 py-2 text-sm font-medium bg-gray-700 hover:bg-gray-600 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity">
+                            Edit
+                        </button>
                     </div>
 
-                    <!-- Right: delete -->
-                    <form method="post" action="/delete/{{ task.id }}">
-                        <button type="submit"
-                            class="text-sm text-red-400 hover:text-red-500">
-                            Delete
-                        </button>
-                    </form>
+                    <!-- Tasks Container -->
+                    <div id="tasks-{{ project.id }}" class="hidden px-6 pb-6 space-y-3">
+                        {% if project.tasks %}
+                            {% for task in project.tasks %}
+                            <div class="task-item bg-gray-700 hover:bg-gray-650 rounded-2xl px-5 py-4 flex items-start gap-5 group transition-all"
+                                 id="task-{{ task.id }}">
+                                
+                                <div class="w-10 h-10 flex-shrink-0 flex items-center justify-center 
+                                           text-2xl font-bold text-gray-400 bg-gray-800 rounded-2xl
+                                           {% if task.status == 1 %}text-green-500{% endif %}">
+                                    {{ task.task_index }}
+                                </div>
 
+                                <div class="flex-1 min-w-0">
+                                    <div class="flex items-center gap-3">
+                                        <span class="{% if task.status == 1 %}line-through text-gray-400{% endif %} font-medium text-lg">
+                                            {{ task.title }}
+                                        </span>
+                                        {% if task.status == -1 %}
+                                        <span class="px-2.5 py-0.5 text-xs font-medium bg-red-500/20 text-red-400 rounded-full">Overdue</span>
+                                        {% elif task.status == 0 %}
+                                        <span class="px-2.5 py-0.5 text-xs font-medium bg-yellow-500/20 text-yellow-400 rounded-full">Pending</span>
+                                        {% elif task.status == 1 %}
+                                        <span class="px-2.5 py-0.5 text-xs font-medium bg-emerald-500/20 text-emerald-400 rounded-full">Done</span>
+                                        {% endif %}
+                                    </div>
+                                    
+                                    {% if task.description %}
+                                    <p class="text-gray-400 text-sm mt-1 line-clamp-2">{{ task.description }}</p>
+                                    {% endif %}
+                                </div>
+
+                                {% if task.status != 1 %}
+                                <div class="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                    <form method="post" action="/project/{{ task.project_id }}/task/{{ task.id }}/mark-done" class="inline">
+                                        <button type="submit" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-sm font-medium rounded-2xl flex items-center gap-1">
+                                            Done
+                                        </button>
+                                    </form>
+                                    <a href="/project/{{ task.project_id }}/task/{{ task.id }}/edit" 
+                                       class="px-4 py-2 bg-gray-600 hover:bg-gray-500 text-sm font-medium rounded-2xl">
+                                        Edit
+                                    </a>
+                                </div>
+                                {% endif %}
+                            </div>
+                            {% endfor %}
+                        {% else %}
+                            <p class="text-gray-400 text-center py-8">No tasks yet.</p>
+                        {% endif %}
+
+                        <!-- Add Task Button -->
+                        <div class="pt-4">
+                            <form method="get" action="/project/{{ project.id }}/task/new">
+                                <button type="submit" 
+                                        class="flex items-center justify-center gap-2 w-full py-3 border border-dashed border-gray-600 hover:border-blue-500 hover:text-blue-400 rounded-2xl text-sm font-medium transition-colors">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                                    </svg>
+                                    Add New Task
+                                </button>
+                            </form>
+                        </div>
+                    </div>
                 </div>
                 {% endfor %}
             {% else %}
-                <p class="text-gray-400 text-sm text-center">
-                    No tasks yet. Add something... or don’t, I’m not your boss.
-                </p>
+                <!-- Empty state (unchanged) -->
+                <div class="bg-gray-800 rounded-3xl p-12 text-center">
+                    <div class="mx-auto w-16 h-16 bg-gray-700 rounded-2xl flex items-center justify-center mb-6 text-3xl">📂</div>
+                    <h3 class="text-xl font-medium">No projects yet</h3>
+                    {% if user %}
+                        <p class="text-gray-400 mt-2 mb-6">Create your first project to get started</p>
+                        <button onclick="openProjectModal()" 
+                                class="inline-flex items-center gap-2 px-6 py-3 bg-blue-600 hover:bg-blue-700 rounded-2xl font-semibold">
+                            Create First Project
+                        </button>
+                    {% else %}
+                        <p class="text-gray-400 mt-2 mb-6">Please log in to create and manage your projects</p>
+                        <a href="/auth/login" class="inline-flex items-center gap-2 px-6 py-3 bg-blue-600 hover:bg-blue-700 rounded-2xl font-semibold">
+                            Login to Get Started
+                        </a>
+                    {% endif %}
+                </div>
             {% endif %}
-
         </div>
+    </div>
 
+    <!-- Reusable Project Modal (Create + Edit) -->
+    <div id="projectModal" class="hidden fixed inset-0 bg-black/70 backdrop-blur-md z-50 flex items-center justify-center">
+        <div class="bg-gray-800 rounded-3xl shadow-2xl w-full max-w-lg mx-4 overflow-hidden">
+            
+            <div class="px-8 py-6 border-b border-gray-700">
+                <h2 id="modalTitle" class="text-2xl font-semibold">New Project</h2>
+                <p id="modalSubtitle" class="text-gray-400 text-sm mt-1">What are we working on?</p>
+            </div>
+
+            <form id="projectForm" method="post" class="p-8 space-y-6">
+                <input type="hidden" id="projectId" name="id" value="">
+
+                <div>
+                    <label class="block text-sm font-medium text-gray-300 mb-2">Project Title</label>
+                    <input type="text" id="projectTitleInput" name="title" required
+                           class="w-full px-5 py-3 bg-gray-700 rounded-2xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                           placeholder="e.g. Personal Website Redesign">
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-gray-300 mb-2">Description <span class="text-gray-500">(optional)</span></label>
+                    <textarea id="projectDescriptionInput" name="description" rows="4"
+                              class="w-full px-5 py-3 bg-gray-700 rounded-2xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-y"
+                              placeholder="Brief description or goals..."></textarea>
+                </div>
+
+                <div class="flex gap-3 pt-4">
+                    <button type="button" onclick="closeProjectModal()"
+                            class="flex-1 py-3 text-gray-300 hover:bg-gray-700 rounded-2xl font-medium transition-colors">
+                        Cancel
+                    </button>
+                    <button type="submit" id="submitBtn"
+                            class="flex-1 py-3 bg-blue-600 hover:bg-blue-700 rounded-2xl font-semibold transition-colors">
+                        Create Project
+                    </button>
+                </div>
+            </form>
+        </div>
     </div>
 
 </div>
 
+<script>
+function toggleProject(projectId) {
+    const container = document.getElementById(`tasks-${projectId}`);
+    const chevron = document.getElementById(`chevron-${projectId}`);
+    
+    if (container.classList.contains('hidden')) {
+        container.classList.remove('hidden');
+        chevron.style.transform = 'rotate(180deg)';
+    } else {
+        container.classList.add('hidden');
+        chevron.style.transform = 'rotate(0deg)';
+    }
+}
+
+// Reusable modal function
+function openProjectModal(id = null, title = '', description = '') {
+    const modal = document.getElementById('projectModal');
+    const form = document.getElementById('projectForm');
+    const titleInput = document.getElementById('projectTitleInput');
+    const descInput = document.getElementById('projectDescriptionInput');
+    const idInput = document.getElementById('projectId');
+    const modalTitle = document.getElementById('modalTitle');
+    const modalSubtitle = document.getElementById('modalSubtitle');
+    const submitBtn = document.getElementById('submitBtn');
+
+    if (id) {
+        // === EDIT MODE ===
+        modalTitle.textContent = 'Edit Project';
+        modalSubtitle.textContent = 'Update your project details';
+        submitBtn.textContent = 'Save Changes';
+        form.action = `/project/${id}/edit`;
+        idInput.value = id;
+    } else {
+        // === CREATE MODE ===
+        modalTitle.textContent = 'New Project';
+        modalSubtitle.textContent = 'What are we working on?';
+        submitBtn.textContent = 'Create Project';
+        form.action = '/project/new';
+        idInput.value = '';
+    }
+
+    titleInput.value = title;
+    descInput.value = description;
+
+    modal.classList.remove('hidden');
+    modal.classList.add('flex');
+}
+
+function closeProjectModal() {
+    const modal = document.getElementById('projectModal');
+    modal.classList.add('hidden');
+    modal.classList.remove('flex');
+}
+
+// Close when clicking outside
+document.getElementById('projectModal').addEventListener('click', function(e) {
+    if (e.target === this) closeProjectModal();
+});
+</script>
 {% endblock %}

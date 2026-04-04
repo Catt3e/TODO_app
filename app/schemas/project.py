@@ -2,10 +2,10 @@ from pydantic import BaseModel
 from typing import Optional
 
 class ProjectBase(BaseModel):
-    name: str
+    title: str
     user_id: int
     description: Optional[str] = None
-    status: Optional[int] = 0 # 0: active, 1: archived, -1: deleted
+    # status: Optional[int] = 0 # 0: active, 1: archived, -1: deleted
 
 class ProjectCreate(ProjectBase):
     pass

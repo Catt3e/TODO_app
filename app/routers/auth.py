@@ -1,22 +1,21 @@
 from datetime import datetime, timedelta
 import random
 
-from fastapi import APIRouter, Depends, Form, HTTPException, BackgroundTasks
+from fastapi import APIRouter, Depends, Form, BackgroundTasks
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.requests import Request
 from sqlalchemy.orm import Session
-from sqlalchemy import or_
-from jose import JWTError, jwt
-from app.models import user
+# from sqlalchemy import or_
+# from jose import JWTError, jwt
+# from app.models import user
 from app.utils.security import (
     get_hashed_password,
     verify_password,
     create_access_token,
-    create_verification_token,
 )
 from app.utils.email import send_verification_email
 from app.core.config import settings
-from app.utils.helper import get_user_by_email
+from app.utils.helper import get_user_by_email, get_user_by_username
 from app.core.database import get_db
 from app.models.user import User
 from templates import templates
@@ -35,6 +34,13 @@ async def login_page(request: Request):
             "success": "Registration successful! Please check your email to verify your account."
         })
     return templates.TemplateResponse("login.html", {"request": request})
+
+@router.get("/logout", response_class=HTMLResponse)
+async def logout(request: Request):
+    request.cookies.clear()
+    response = RedirectResponse(url="/", status_code=303)
+    response.delete_cookie(key="access_token")
+    return response
 
 @router.post("/register", response_model=None, response_class=HTMLResponse)
 async def register(
@@ -109,30 +115,30 @@ async def login(
             "error": "Database connection error"
         })
     
-    user = db.query(User).filter(or_(User.email == email, User.username == email)).first()
+    db_user = get_user_by_email(db, email) or get_user_by_username(db, email)
 
-    if not user:
+    if not db_user:
         return templates.TemplateResponse("login.html", {
             "request": request,
             "error": "User not found"
         })
 
-    if not verify_password(password, user.hashed_password):
+    if not verify_password(password, db_user.hashed_password):
         return templates.TemplateResponse("login.html", {
             "request": request,
             "error": "Incorrect password"
         })
 
-    if not user.is_verified:
+    if not db_user.is_verified:
         return templates.TemplateResponse("verify_notice.html", {
             "request": request,
         })
 
-    access_token = create_access_token(data={"sub": user.email})
+    access_token = create_access_token(data={"sub": db_user.email})
     
     response = RedirectResponse(url="/", status_code=303)
     response.set_cookie(key="access_token", value=access_token, httponly=True)
-    return RedirectResponse(url="/", status_code=303)
+    return response
 
 @router.post("/verify-email", response_class=HTMLResponse, response_model=None)
 async def verify_email(
@@ -141,15 +147,15 @@ async def verify_email(
     code: str = Form(...),
     email: str = Form(...)
     ):
-    user = db.query(User).filter(User.email == email).first()
+    db_user = get_user_by_email(db, email)
 
-    if not user:
+    if not db_user:
         return RedirectResponse(url="/auth/login", status_code=303)
     
-    if user.verification_code == int(code) and user.code_expire_time > datetime.utcnow():
-        user.is_verified = True
-        user.verification_code = None
-        user.code_expire_time = None
+    if db_user.verification_code == int(code) and db_user.code_expire_time > datetime.utcnow():
+        db_user.is_verified = True
+        db_user.verification_code = None
+        db_user.code_expire_time = None
         db.commit()
         return templates.TemplateResponse("verify_success.html", {"request": request})
     else:
@@ -170,18 +176,24 @@ async def resend_verification(
     db: Session = Depends(get_db),
     email: str = Form(...)
 ):
-    user = db.query(User).filter(User.email == email).first()
+    db_user = get_user_by_email(db, email)
+    if not db_user:
+        return templates.TemplateResponse("verify_notice.html", {
+            "request": request,
+            "email": email,
+            "error": "User not found"
+        })
 
-    print(f"Retrieved user: {user}")
+    print(f"Retrieved user: {db_user}")
 
     verify_code= random.randint(100000, 999999)
     expire_time= datetime.utcnow() + timedelta(minutes=settings.VERIFICATION_TOKEN_EXPIRE_MINUTES)
 
-    user.verification_code = verify_code
-    user.code_expire_time = expire_time
+    db_user.verification_code = verify_code
+    db_user.code_expire_time = expire_time
     db.commit()
-    print(f"Resending verification email for user: {user.email}, code: {user.verification_code}, expires at: {user.code_expire_time}")
-    background_tasks.add_task(send_verification_email, user.email, str(user.verification_code))
+    print(f"Resending verification email for user: {db_user.email}, code: {db_user.verification_code}, expires at: {db_user.code_expire_time}")
+    background_tasks.add_task(send_verification_email, db_user.email, str(db_user.verification_code))
 
     return templates.TemplateResponse("verify_notice.html", {
         "request": request,

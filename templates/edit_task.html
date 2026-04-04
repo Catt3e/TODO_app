@@ -1,0 +1,151 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="min-h-screen bg-gray-900 text-gray-100">
+    <div class="max-w-7xl mx-auto p-6">
+        <div class="flex gap-8">
+
+            <!-- Main Form Panel -->
+            <div class="flex-1">
+                <div class="bg-gray-800 rounded-3xl shadow-xl p-8 max-w-2xl">
+                    
+                    <!-- Header -->
+                    <div class="mb-8">
+                        <a href="/" class="inline-flex items-center gap-2 text-gray-400 hover:text-white mb-4">
+                            ← Back to Projects
+                        </a>
+                        <h1 class="text-3xl font-bold">Edit Task</h1>
+                        <p class="text-gray-400 mt-1">for <span class="text-white font-medium">{{ project.title }}</span></p>
+                    </div>
+
+                    {% if error %}
+                    <div class="bg-red-500/20 text-red-400 p-3 rounded-lg text-sm text-left mb-6">
+                        {{ error }}
+                    </div>
+                    {% endif %}
+
+                    <form method="post" class="space-y-8" action="/project/{{ project.id }}/task/{{ task.id }}/edit">
+                        
+                        <!-- Title -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-300 mb-2">Task Title*</label>
+                            <input type="text" name="title" value="{{ task.title }}" required
+                                   class="w-full px-5 py-4 bg-gray-700 border border-transparent focus:border-blue-500 rounded-2xl text-lg placeholder-gray-400 focus:outline-none"
+                                   placeholder="What needs to be done?">
+                        </div>
+
+                        <!-- Description -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-300 mb-2">Description <span class="text-gray-500">(optional)</span></label>
+                            <textarea name="description" rows="5"
+                                      class="w-full px-5 py-4 bg-gray-700 border border-transparent focus:border-blue-500 rounded-3xl placeholder-gray-400 focus:outline-none resize-y"
+                                      placeholder="Details, notes, or acceptance criteria...">{{ task.description }}</textarea>
+                        </div>
+
+                        <!-- Due Date -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-300 mb-2">Due Date*</label>
+                            <input type="datetime-local" name="due_date" value="{{ task.due_date.strftime('%Y-%m-%dT%H:%M') }}" required
+                                   class="w-full px-5 py-4 bg-gray-700 border border-transparent focus:border-blue-500 rounded-2xl focus:outline-none">
+                        </div>
+
+                        <div class="flex gap-4 pt-6">
+                            <a href="/"
+                               class="flex-1 py-4 text-center bg-gray-700 hover:bg-gray-600 rounded-2xl font-medium transition-colors">
+                                Cancel
+                            </a>
+                            <button type="submit"
+                                    class="flex-1 py-4 bg-blue-600 hover:bg-blue-700 rounded-2xl font-semibold transition-colors">
+                                Update Task
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Side Info Panel -->
+            <div class="w-96 flex-shrink-0">
+                <div class="bg-gray-800 rounded-3xl shadow-xl p-8 sticky top-6">
+                    
+                    <h2 class="text-xl font-semibold mb-6 flex items-center gap-3">
+                        <span class="text-blue-400">📋</span>
+                        {{ project.title }}
+                    </h2>
+
+                    <!-- Project Summary -->
+                    {% if project.get_summary() or project.get_progress() is defined %}
+                    <div class="mb-8 p-5 bg-gray-900 rounded-2xl">
+                        {% if project.get_summary() %}
+                            <p class="text-sm text-gray-400">{{ project.get_summary() }}</p>
+                        {% endif %}
+                        {% if project.get_progress() is defined %}
+                            <div class="mt-4">
+                                <div class="flex justify-between text-xs mb-1.5">
+                                    <span class="text-gray-400">Progress</span>
+                                    <span class="font-mono text-emerald-400">{{ project.get_progress() }}%</span>
+                                </div>
+                                <div class="h-2 bg-gray-700 rounded-full overflow-hidden">
+                                    <div class="h-full bg-emerald-500 rounded-full transition-all"
+                                         style="width: {{ project.get_progress() }}%"></div>
+                                </div>
+                            </div>
+                        {% endif %}
+                    </div>
+                    {% endif %}
+
+                    <!-- Existing Tasks -->
+                    <div>
+                        <div class="flex items-center justify-between mb-4">
+                            <h3 class="font-medium text-gray-300">Tasks in this project</h3>
+                            <span class="text-xs px-3 py-1 bg-gray-700 rounded-full text-gray-400">
+                                {{ project.tasks|length }}
+                            </span>
+                        </div>
+
+                        <div class="space-y-3 max-h-[520px] overflow-y-auto pr-2 custom-scroll">
+                            {% if project.tasks %}
+                                {% for task in project.tasks %}
+                                <div class="bg-gray-700/70 rounded-2xl px-5 py-4 text-sm">
+                                    <div class="flex items-start gap-3">
+                                        <div class="w-6 h-6 flex-shrink-0 flex items-center justify-center text-base font-bold text-gray-400 bg-gray-800 rounded-xl mt-0.5">
+                                            {{ task.task_index }}
+                                        </div>
+                                        <div class="flex-1 min-w-0">
+                                            <p class="{% if task.status == 1 %}line-through text-gray-400{% endif %}">
+                                                {{ task.title }}
+                                            </p>
+                                            {% if task.due_date %}
+                                            <p class="text-xs text-gray-500 mt-1">
+                                                Due: {{ task.due_date.strftime('%b %d, %Y') }}
+                                            </p>
+                                            {% endif %}
+                                        </div>
+                                        {% if task.status == 1 %}
+                                        <span class="text-emerald-400 text-xs">✓</span>
+                                        {% elif task.status == -1 %}
+                                        <span class="text-red-400 text-xs">!</span>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            {% else %}
+                                <p class="text-gray-400 text-sm py-8 text-center">No tasks yet.<br>This will be the first one.</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<style>
+.custom-scroll::-webkit-scrollbar {
+    width: 6px;
+}
+.custom-scroll::-webkit-scrollbar-thumb {
+    background-color: rgb(55 65 81);
+    border-radius: 9999px;
+}
+</style>
+{% endblock %}

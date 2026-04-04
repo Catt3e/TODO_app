@@ -1,5 +1,6 @@
 from app.core.database import Base
 from sqlalchemy import Boolean, Column, DateTime, Integer, String
+from sqlalchemy.orm import relationship
 
 class User(Base):
     __tablename__ = "users"
@@ -19,3 +20,5 @@ class User(Base):
 
     def __repr__(self):
         return f"<User(id={self.id}, username='{self.username}', email='{self.email}', is_verified={self.is_verified})>"
+    
+    projects = relationship("Project", back_populates="owner")

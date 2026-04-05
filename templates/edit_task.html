@@ -14,7 +14,7 @@
                             ← Back to Projects
                         </a>
                         <h1 class="text-3xl font-bold">Edit Task</h1>
-                        <p class="text-gray-400 mt-1">for <span class="text-white font-medium">{{ project.title }}</span></p>
+                        <p class="text-gray-400 mt-1">for <span class="text-white font-medium">{{ project.title if project else 'Project not found' }}</span></p>
                     </div>
 
                     {% if error %}
@@ -23,6 +23,7 @@
                     </div>
                     {% endif %}
 
+                    {% if task %}
                     <form method="post" class="space-y-8" action="/project/{{ project.id }}/task/{{ task.id }}/edit">
                         
                         <!-- Title -->
@@ -44,7 +45,7 @@
                         <!-- Due Date -->
                         <div>
                             <label class="block text-sm font-medium text-gray-300 mb-2">Due Date*</label>
-                            <input type="datetime-local" name="due_date" value="{{ task.due_date.strftime('%Y-%m-%dT%H:%M') }}" required
+                            <input type="datetime-local" name="due_date" value="{{ task.due_date.strftime('%Y-%m-%dT%H:%M') if task and task.due_date else '' }}" required
                                    class="w-full px-5 py-4 bg-gray-700 border border-transparent focus:border-blue-500 rounded-2xl focus:outline-none">
                         </div>
 
@@ -59,12 +60,16 @@
                             </button>
                         </div>
                     </form>
+                    {% else %}
+                    <p class="text-gray-400 text-center py-20">Task not found.</p>
+                    {% endif %}
                 </div>
             </div>
 
             <!-- Side Info Panel -->
             <div class="w-96 flex-shrink-0">
                 <div class="bg-gray-800 rounded-3xl shadow-xl p-8 sticky top-6">
+                    {% if project %}
                     
                     <h2 class="text-xl font-semibold mb-6 flex items-center gap-3">
                         <span class="text-blue-400">📋</span>
@@ -113,7 +118,7 @@
                                             <p class="{% if task.status == 1 %}line-through text-gray-400{% endif %}">
                                                 {{ task.title }}
                                             </p>
-                                            {% if task.due_date %}
+                                            {% if task and task.due_date %}
                                             <p class="text-xs text-gray-500 mt-1">
                                                 Due: {{ task.due_date.strftime('%b %d, %Y') }}
                                             </p>
@@ -132,6 +137,9 @@
                             {% endif %}
                         </div>
                     </div>
+                    {% else %}
+                        <p class="text-gray-400 text-center py-20">Project not found.</p>
+                    {% endif %}
                 </div>
             </div>
 

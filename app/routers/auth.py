@@ -5,9 +5,6 @@ from fastapi import APIRouter, Depends, Form, BackgroundTasks
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.requests import Request
 from sqlalchemy.orm import Session
-# from sqlalchemy import or_
-# from jose import JWTError, jwt
-# from app.models import user
 from app.utils.security import (
     get_hashed_password,
     verify_password,
@@ -70,10 +67,10 @@ async def register(
 
     try:
         hashed_password = get_hashed_password(password)
-    except ValueError:
+    except ValueError as e:
         return templates.TemplateResponse("register.html", {
             "request": request,
-            "error": "Password is too long (max 72 characters)"
+            "error": str(e)
         })
     
     verification_code = random.randint(100000, 999999)

@@ -3,7 +3,7 @@ from fastapi.responses import RedirectResponse
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
-from templates import templates
+# from templates import templates
 from app.services.project_service import(
     create_project,
     get_project_by_id,
@@ -13,9 +13,9 @@ from app.utils.helper import get_verified_user
 
 router = APIRouter(prefix="/project", tags=["project"])
 
-@router.get("/new", response_model=None)
-async def new_project(request: Request):
-    return templates.TemplateResponse("new_project.html", {"request": request})
+# @router.get("/new", response_model=None)
+# async def new_project(request: Request):
+#     return templates.TemplateResponse("new_project.html", {"request": request})
 
 @router.post("/new", response_model=None)
 async def new_project(
@@ -38,7 +38,6 @@ async def new_project(
 @router.post("/{project_id}/edit", response_model=None)
 async def edit_project(
     request: Request,
-    project_id: int,
     db: Session = Depends(get_db),
     title: str = Form(...),
     description: str = Form(None)
@@ -52,8 +51,12 @@ async def edit_project(
 
     if not user:
         return RedirectResponse(url="/auth/login", status_code=303)
-    project = get_project_by_id(db, project_id)
-    if not project or project.user_id != user.id:
+    
+    project_id = request.path_params["project_id"]
+    try:
+        get_project_by_id(db, project_id)
+    except ValueError as e:
+        print(f"Error occurred while fetching project: {e}")
         return RedirectResponse(url="/", status_code=303)
     
     project_data = {
@@ -65,6 +68,6 @@ async def edit_project(
 
     try:
         await update_project(db, project_id, project_data=project_data)
-    except Exception as e:
-        print(f"Error updating project: {e}")
+    except ValueError as e:
+        print(f"Error occurred while updating project: {e}")
     return RedirectResponse(url="/", status_code=303)

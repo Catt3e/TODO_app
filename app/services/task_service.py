@@ -5,7 +5,10 @@ from app.schemas.task import TaskCreate
 from app.utils.helper import validate_task_data
 
 async def create_task(db: Session, task_data: TaskCreate):
-    validate_task_data(task_data)
+    try:
+        validate_task_data(task_data)
+    except ValueError as e:
+        raise ValueError(str(e))
 
     new_task = Task(**task_data.model_dump())
 

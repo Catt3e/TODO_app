@@ -14,7 +14,7 @@
                             ← Back to Projects
                         </a>
                         <h1 class="text-3xl font-bold">Add New Task</h1>
-                        <p class="text-gray-400 mt-1">for <span class="text-white font-medium">{{ project.title }}</span></p>
+                        <p class="text-gray-400 mt-1">for <span class="text-white font-medium">{{ project.title if project else 'Project not found' }}</span></p>
                     </div>
 
                     {% if error %}
@@ -65,6 +65,7 @@
             <!-- Side Info Panel -->
             <div class="w-96 flex-shrink-0">
                 <div class="bg-gray-800 rounded-3xl shadow-xl p-8 sticky top-6">
+                    {% if project %}
                     
                     <h2 class="text-xl font-semibold mb-6 flex items-center gap-3">
                         <span class="text-blue-400">📋</span>
@@ -132,6 +133,9 @@
                             {% endif %}
                         </div>
                     </div>
+                    {% else %}
+                        <p class="text-gray-400 text-center py-20">Project not found.</p>
+                    {% endif %}
                 </div>
             </div>
 

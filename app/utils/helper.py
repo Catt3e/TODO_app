@@ -8,7 +8,7 @@ from fastapi import Request
 from app.schemas.task import TaskCreate
 
 def validate_task_data(task_data: TaskCreate):
-    if not task_data.title:
+    if not task_data.title or task_data.title.strip() == "":
         raise ValueError("Task title is required")
     if task_data.status not in [-1, 0, 1]:
         raise ValueError("Invalid status value")

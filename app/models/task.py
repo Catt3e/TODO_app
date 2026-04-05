@@ -11,7 +11,7 @@ class Task(Base):
     task_index = Column(Integer, index=True)
     title = Column(String, index=True)
     description = Column(String, index=True)
-    due_date = Column(DateTime, index=True)
+    due_date = Column(DateTime, index=True, nullable=True)
     status = Column(Integer, default=0) # 0: pending, 1: completed, -1: overdue
 
     created_at = Column(String, default=lambda: datetime.datetime.now(datetime.UTC).isoformat())

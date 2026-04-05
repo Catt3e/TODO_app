@@ -37,6 +37,12 @@
             </button>
         </div>
 
+        {% if error %}
+            <div class="bg-red-900 text-red-300 p-4 rounded-2xl">
+                {{ error }}
+            </div>
+        {% endif %}
+
         <!-- Projects List -->
         <div class="space-y-6">
             {% if projects %}
